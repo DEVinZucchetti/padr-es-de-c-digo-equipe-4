@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pet;
 use App\Models\Specie;
+use App\Http\Services\Specie\GetAllSpeciesService;
 use App\Traits\HttpResponses;
 use Exception;
 use Illuminate\Http\Request;
@@ -13,8 +14,8 @@ class SpecieController extends Controller
 {
     use HttpResponses;
 
-    public function index() {
-        $species = Specie::all();
+    public function index(GetAllSpeciesService $getAllSpeciesService) {
+        $species = $getAllSpeciesService->handle();
         return $species;
     }
 
