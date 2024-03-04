@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Pet;
 use App\Models\Specie;
+use App\Http\Requests\StoreSpecieRequest;
+use App\Http\Services\Specie\CreateSpecieService;
 use App\Http\Services\Specie\GetAllSpeciesService;
+use App\Http\Services\Specie\GetOneSpecieService;
 use App\Traits\HttpResponses;
 use Exception;
 use Illuminate\Http\Request;
@@ -19,36 +22,34 @@ class SpecieController extends Controller
         return $species;
     }
 
-    public function store(Request $request)
+    public function store(StoreSpecieRequest $request, CreateSpecieService $createSpecieService)
     {
         try {
-            $request->validate([
-                'name' => 'required|string|unique:species|max:50'
-            ]);
-
             $body = $request->all();
+            $race = $createSpecieService->handle($body);
+            return $race;
 
-            $specie = Specie::create($body);
-
-            return $specie;
         } catch (Exception $exception) {
             return $this->error($exception->getMessage(), Response::HTTP_BAD_REQUEST);
         }
     }
 
+    public function destroy($id, GetOneSpecieService $getOneSpecieService) {
 
-    public function destroy($id) {
-        $specie = Specie::find($id);
+        $specie = $getOneSpecieService->handle($id);
 
         $amountPetsUsingSpecieId = Pet::query()->where('specie_id', $id)->count();
 
-        if($amountPetsUsingSpecieId !== 0) return $this->error('Existem pets usando essa espécie', Response::HTTP_CONFLICT);
+        if($amountPetsUsingSpecieId !== 0) {
+            return $this->error('Existem pets usando essa espécie', Response::HTTP_CONFLICT);
+        }
 
-        if(!$specie) return $this->error('Dado não encontrado', Response::HTTP_NOT_FOUND);
+        if(!$specie) {
+            return $this->error('Dado não encontrado', Response::HTTP_NOT_FOUND);
+        }
 
         $specie->delete();
 
         return $this->response('', Response::HTTP_NO_CONTENT);
     }
-
 }
